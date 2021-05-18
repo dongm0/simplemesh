@@ -1,4 +1,4 @@
-#include "elementqmean.h"
+#include "elementqcalculator.h"
 #include "jqmetric.h"
 #include "simplemesh.h"
 

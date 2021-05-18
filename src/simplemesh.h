@@ -1,6 +1,5 @@
 #ifndef SIMPLEMESH_H
 #define SIMPLEMESH_H
-#endif
 
 #include <Eigen/Dense>
 #include <array>
@@ -74,3 +73,5 @@ private:
 
 private:
 };
+
+#endif
