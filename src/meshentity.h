@@ -38,14 +38,12 @@ private:
   const SEntityType m_type = SEntityType::Cell;
 };
 
-class SQuadCell {
+template <uint8_t N>
+class SCell {
 private:
-  std::array<SHalfEdgeId, 4> m_half_edges;
+  std::array<SHalfEdgeId, N> m_half_edges;
 };
-class STriCell {
-private:
-  std::array<SHalfEdgeId, 3> m_half_edges;
-};
+
 class SPolyCell {
 private:
   std::vector<SHalfEdgeId> m_half_edges;
@@ -68,29 +66,24 @@ private:
   // in counter-clockwise direction
   std::vector<int32_t> m_out_he;
 };
+/* not necessary?
+class SCorner {
+  private:
+  std::array<SVertexId, 3> m_corner_v;
+}
+*/
 
+template <uint8_t N>
 class SimpleMesh {
 private:
-  std::vector<SCell> m_c;
+  std::vector<SCell<N>> m_c;
   std::vector<SHalfEdge> m_he;
   std::vector<SEdge> m_e;
   std::vector<SVertex> m_v;
 
 public:
   void ReadFromFile(const std::string &filename);
-  // std::pair<Eigen::MatrixXd, Eigen::MatrixXi> GetMatrixView() const;
-  // void AssignGeomFromMatrix(const Eigen::MatrixXd &v);
-  // void Subdivide(const std::vector<int32_t> &tagged);
   void WriteToFile(const std::string &filename) const;
-  // std::pair<Eigen::Matrix<double, Eigen::Dynamic, 2>,
-  //          Eigen::Matrix<int, Eigen::Dynamic, 4>>
-  // GetMatrixView();
-  // std::pair<Eigen::Matrix<double, Eigen::Dynamic, 2>,
-  //          Eigen::Matrix<int, Eigen::Dynamic, 4>>
-  // GetMatrixView_Exp();
-
-  // temp
-  // void WriteToFile_Exp(const std::string &filename) const;
 
 public:
   // 本次项目main中不需要直接用到
@@ -99,14 +92,15 @@ public:
   uint32_t NumHalfEdges() const;
   uint32_t NumEdges() const;
 
-  std::array<int32_t, 4> CellVertices(int32_t cell_id) const;
-  std::array<std::array<int32_t, 3>, 4> CellCorners(int32_t cell_id) const;
-  Eigen::Vector2d GetVertexCoord(int32_t vertex_id) const;
-  int32_t AdjecentCell(int32_t cell_id, int32_t half_edge_id) const;
-  int32_t OppositeHalfEdgeInCell(int32_t cell_id, int32_t half_edge_id) const;
-  int32_t OppositeHalfEdge(int32_t half_edge_id) const;
-  int32_t HalfEdgeInstanceEdge(int32_t half_edge_id) const;
-  int32_t HalfEdgeInstanceCell(int32_t half_edge_id) const;
+  std::array<SVertexId, N> CellVertices(SCellId cell_id) const;
+  std::array<std::array<SVertexId, 3>, N> CellCorners(SCellId cell_id) const;
+  // Eigen::Vector2d GetVertexCoord(int32_t vertex_id) const;
+  SCellId AdjecentCell(SCellId cell_id, SHalfEdgeId half_edge_id) const;
+  // only avaliable in quad mesh
+  SHalfEdgeId OppositeHalfEdgeInCell(SCellId cell_id, SHalfEdgeId half_edge_id) const;
+  SHalfEdgeId OppositeHalfEdge(SHalfEdgeId half_edge_id) const;
+  SEdgeId HalfEdgeInstanceEdge(SHalfEdgeId half_edge_id) const;
+  SCellId HalfEdgeInstanceCell(SHalfEdgeId half_edge_id) const;
   /*
   const SMeshCell Cell(int32_t cell_id) const;
   const SMeshEdge Edge(int32_t edge_id) const;
