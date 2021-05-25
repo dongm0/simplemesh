@@ -93,7 +93,6 @@ public:
   // void WriteToFile_Exp(const std::string &filename) const;
 
 public:
-  // 本次项目main中不需要直接用到
   uint32_t NumVertices() const;
   uint32_t NumCells() const;
   uint32_t NumHalfEdges() const;
