@@ -1,7 +1,8 @@
 #ifndef SIMPLEMESH_H
 #define SIMPLEMESH_H
 
-#include <Eigen/Dense>
+#include "sequenceset.h"
+//#include <Eigen/Dense>
 #include <array>
 #include <set>
 #include <vector>
@@ -12,9 +13,10 @@ enum class SEntityType { Vertex, HalfEdge, Edge, Cell };
 
 class SEntityId {
 private:
-  int32_t m_id = -1;
+  uint32_t m_id = 0;
 
 public:
+  SEntityId(uint32_t id) : m_id(id) {}
   bool Valid();
 };
 
@@ -38,8 +40,7 @@ private:
   const SEntityType m_type = SEntityType::Cell;
 };
 
-template <uint8_t N>
-class SCell {
+template <uint8_t N> class SCell {
 private:
   std::array<SHalfEdgeId, N> m_half_edges;
 };
@@ -64,7 +65,7 @@ private:
 class SVertex {
 private:
   // in counter-clockwise direction
-  std::vector<int32_t> m_out_he;
+  SequenceSet<SHalfEdgeId> m_out_he;
 };
 /* not necessary?
 class SCorner {
@@ -73,8 +74,7 @@ class SCorner {
 }
 */
 
-template <uint8_t N>
-class SimpleMesh {
+template <uint8_t N> class SimpleMesh {
 private:
   std::vector<SCell<N>> m_c;
   std::vector<SHalfEdge> m_he;
@@ -96,7 +96,8 @@ public:
   // Eigen::Vector2d GetVertexCoord(int32_t vertex_id) const;
   SCellId AdjecentCell(SCellId cell_id, SHalfEdgeId half_edge_id) const;
   // only avaliable in quad mesh
-  SHalfEdgeId OppositeHalfEdgeInCell(SCellId cell_id, SHalfEdgeId half_edge_id) const;
+  SHalfEdgeId OppositeHalfEdgeInCell(SCellId cell_id,
+                                     SHalfEdgeId half_edge_id) const;
   SHalfEdgeId OppositeHalfEdge(SHalfEdgeId half_edge_id) const;
   SEdgeId HalfEdgeInstanceEdge(SHalfEdgeId half_edge_id) const;
   SCellId HalfEdgeInstanceCell(SHalfEdgeId half_edge_id) const;

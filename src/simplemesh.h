@@ -1,6 +1,7 @@
 #ifndef SIMPLEMESH_H
 #define SIMPLEMESH_H
 
+#include "sequenceset.h"
 #include <Eigen/Dense>
 #include <array>
 #include <set>

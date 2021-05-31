@@ -1,6 +1,8 @@
 #include <unordered_map>
 #include <vector>
 
+// 主要是维护点与点之间的关系
+
 template <typename T> class SequenceSet {
 private:
   // 参照 知乎https://www.zhihu.com/question/319277442的回答
@@ -94,7 +96,7 @@ public:
     m_data.pop_back();
     m_index.erase(data);
   }
-
+  bool IsIn(T &data) { return m_index.count(data) != 0; }
   void InsertAfter(T *data, T *prev) {
     if (m_index.count(prev) == 0) {
       throw std::runtime_error("prev elem not in set!");
