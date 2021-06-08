@@ -1,4 +1,26 @@
-#include
-// 网格的实体我想用handle访问，同时可以得知handle的idx，在删除之后handle不变但是idx变
-// handle用自带的idx判等，但是一般也不用判等，所以不写
-// 用randomset装
+
+#include "2Dmesh/meshentity.hpp"
+#include "core/quicklist.hpp"
+#include <iostream>
+
+int main() {
+  SimpleMesh::S2D::SCellId id1(0);
+  SimpleMesh::S2D::SCellId id2(1);
+  SimpleMesh::S2D::SVertexId id444(0);
+  QuickList<int> list;
+  list.PushBack(0);
+  list.PushBack(1);
+  list.PushBack(2);
+  list.PushBack(3);
+  list.PushBack(4);
+  list.PopBack();
+  list.PopFront();
+  list.PushFront(988);
+  list.PutAfter(988, 2);
+  list.Erase(list.Find(2));
+
+  for (auto it = list.begin(); it != list.end(); ++it) {
+    std::cout << *it << std::endl;
+  }
+  return 0;
+}
