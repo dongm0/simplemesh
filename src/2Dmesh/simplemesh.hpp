@@ -10,7 +10,7 @@
 
 namespace SimpleMesh {
 namespace S2D {
-template <SMeshType _Mty> class TopoMesh {
+template <SMeshType _Mty> class BaseMesh {
 private:
   std::unordered_map<SVertexId, SVertex> m_v;
   std::unordered_map<SCellId, SCell<_Mty>> m_c;
@@ -59,17 +59,19 @@ public:
   uint32_t NumHalfEdges() const { return m_he.size(); }
   uint32_t NumEdges() const { return m_e.size(); }
 
-  std::vector<SVertexId> CellHalfEdges(SCellId cell_id) const {
+public:
+  std::vector<SVertexId> CellHalfEdges(const SCellId &cell_id) const {
     return _CEntity(cell_id).m_half_edges;
   }
-  std::vector<SVertexId> CellVertices(SCellId cell_id) const {
+  std::vector<SVertexId> CellVertices(const SCellId &cell_id) const {
     std::vector<SVertexId> _res;
     for (auto _heid : _CEntity(cell_id).m_half_edges) {
       _res.push_back(_HEEntity(_heid).m_st_v);
     }
     return _res;
   }
-  std::vector<std::array<SVertexId, 3>> CellCorners(SCellId cell_id) const {
+  std::vector<std::array<SVertexId, 3>>
+  CellCorners(const SCellId &cell_id) const {
     std::vector<SVertexId> _tmp;
     for (auto _heid : _CEntity(cell_id).m_half_edges) {
       _tmp.push_back(_HEEntity(_heid).m_st_v);
@@ -80,22 +82,44 @@ public:
                                                {_tmp[2], tmp[3], tmp[0]}};
     return _res;
   }
-  // Eigen::Vector2d GetVertexCoord(int32_t vertex_id) const;
-  SCellId AdjecentCell(SCellId cell_id, SHalfEdgeId half_edge_id) const {
+
+  std::vector<SVertexId> VertexVertices(const SVertexId &vid) const {
+    std::vector<SVertexId> res;
+    for (auto _he : _VEntity(vid).m_out_he) {
+      res.push_back(_HEEntity(_he).m_ed_v);
+    }
+    return res;
+  }
+  std::vector<SHalfEdgeId> VertexOutHalfEdges(const SVertexId &vid) const {
+    std::vector<SHalfEdgeId> res;
+    for (auto _he : _VEntity(vid).m_out_he) {
+      res.push_back(_he);
+    }
+    return res;
+  }
+  std::vector<SCellId> VertexCells(const SVertexId &vid) const {
+    std::vector<SCellId> res;
+    for (auto _he : _VEntity(vid).m_out_he) {
+      res.push_back(_HEEntity(_he).m_instance_cell);
+    }
+    return res;
+  }
+
+  SCellId AdjecentCell(const SCellId &cell_id,
+                       const SHalfEdgeId &half_edge_id) const {
     auto _centity = _CEntity(cell_id);
     auto _heentity = _HEEntity(half_edge_id);
     auto _opposite_heentity = _HEEntity(_heentity.m_opposite);
     return _opposite_heentity.m_instance_cell;
   }
   template <SMeshType _Mty>
-  SHalfEdgeId OppositeHalfEdgeInCell(SCellId cell_id,
-                                     SHalfEdgeId half_edge_id) const {
+  SHalfEdgeId OppositeHalfEdgeInCell(const SCellId &cell_id,
+                                     const SHalfEdgeId &half_edge_id) const {
     throw std::runtime_error("only support quad mesh.");
   }
   template <>
-  SHalfEdgeId
-  OppositeHalfEdgeInCell<SMeshType::Quad>(SCellId cell_id,
-                                          SHalfEdgeId half_edge_id) const {
+  SHalfEdgeId OppositeHalfEdgeInCell<SMeshType::Quad>(
+      const SCellId &cell_id, const SHalfEdgeId &half_edge_id) const {
     int _pos = -1;
     for (int i = 0; i < 4; ++i) {
       if (m_c.at(cell_id).m_half_edges.at(i) == half_edge_id) {
@@ -108,39 +132,26 @@ public:
     }
     return m_c.at(cell_id).m_half_edges.at((i + 2) % 4);
   }
-  SHalfEdgeId OppositeHalfEdge(SHalfEdgeId half_edge_id) const {
+  SHalfEdgeId OppositeHalfEdge(const SHalfEdgeId &half_edge_id) const {
     auto _heentity = _HEEntity(half_edge_id);
     return _heentity.m_opposite;
   }
-  SEdgeId HalfEdgeInstanceEdge(SHalfEdgeId half_edge_id) const {
+  SEdgeId HalfEdgeInstanceEdge(const SHalfEdgeId &half_edge_id) const {
     return _HEEntity(half_edge_id).m_instance_edge;
   }
-  SCellId HalfEdgeInstanceCell(SHalfEdgeId half_edge_id) const {
+  SCellId HalfEdgeInstanceCell(const SHalfEdgeId &half_edge_id) const {
     return _HEEntity(half_edge_id).m_instance_cell;
   }
-  /*
-  const SMeshCell Cell(int32_t cell_id) const;
-  const SMeshEdge Edge(int32_t edge_id) const;
-  const SMeshHalfEdge HalfEdge(int32_t half_edge_id) const;
-  const SMeshVertex Vertex(int32_t vertex_id) const;
-  */
-public:
-  // 先用着，再改，已有的addcell逻辑不对换成这个
-  // int32_t AddCellFromVertex(int32_t vid1, int32_t vid2, int32_t vid3,
-  //                          int32_t vid4);
 
 public:
-  // 可能功能性有问题，但是先写着
   SVertexId AddVertex() {
     SVertexId res_id(m_v.size());
     m_v.insert(std::make_pair(res_id, SVertex()));
     return res_id;
   }
   SHalfEdgeId AddHalfEdge(SVertexId st_v_id, SVertexId ed_v_id) {
-    for (auto _heid : _VEntity(st_v_id).m_out_he) {
-      if (_HEEntity(_heid).m_ed_v == ed_v_id) {
-        throw std::runtime_error("halfedge already exist!");
-      }
+    if (_VEntity(st_v_id).m_nbh_v.count(ed_v_id) != 0) {
+      throw std::runtime_error("halfedge already exist!");
     }
     SHalfEdgeId res_id(m_he.size());
     SHalfEdgeId res_oppo_id(m_he.size() + 1);
@@ -151,15 +162,55 @@ public:
     m_e.insert(std::make_pair(edge_id, SEdge(res_id, res_oppo_id)));
     m_v.at(st_v_id).m_out_he.PushBack(res_id);
     m_v.at(ed_v_id).m_out_he.PushBack(res_oppo_id);
+    m_v.at(st_v_id).m_nbh_v.insert({ed_v_id, res_id});
+    m_v.at(ed_v_id).m_nbh_v.insert({st_v_id, res_oppo_id});
     return res_id;
   }
   // todo:
   // - 添加id有效的检测（预想可以设置为宏）
-  SCellId AddCell(int32_t heid1, int32_t heid2, int32_t heid3, int32_t heid4);
+
+  // edge can be added freely, but cell needs check
+  // halfedge和edge必须绑定，但是cell不一样
+  SCellId AddCell(const std::vector<SHalfEdgeId> &heids) {
+    for (size_t i = 0; i < heids.size(); ++i) {
+      if (_HEEntity(heids[i]).m_ed_v !=
+          _HEEntity(heids[(i + 1) % heids.size()]).m_st_v) {
+        throw std::runtime_error("halfedges not form a circle!");
+      }
+      if (_HEEntity(heids[i]).m_instance_cell != -1)
+    }
+    SCell _c(heids);
+    SCellId res_id(m_c.size());
+    for (auto _heid : heids) {
+      m_he[_heid].m_instance_cell = res_id;
+    }
+    m_c.insert(std::make_pair(res_id, _c));
+    return res_id;
+  }
+  SCellId AddCell(const std::vector<SVertexID> &vids) {
+    std::vector<SHalfEdgeId> heids;
+    for (size_t i = 0; i < vids.size(); ++i) {
+      if (_VEntity(vids[i]).m_nbh_v.count(vids[(i + 1) % vids.size()]) == 0) {
+        heids.push_back(AddHalfEdge(heids[i], heids[(i + 1) % heids.size()]));
+      } else {
+        heids.push_back(
+            _VEntity(vids[i]).m_nbh_v.at(vids[(i + 1) % vids.size()]));
+      }
+    }
+    SCell _c(heids);
+    SCellId res_id(m_c.size());
+    for (auto _heid : heids) {
+      m_he[_heid].m_instance_cell = res_id;
+    }
+    m_c.insert(std::make_pair(res_id, _c));
+    return res_id;
+  }
+  /*
   int32_t SetHalfEdge(int32_t half_edge_id, int32_t st_v_id, int32_t ed_v_id);
   int32_t SetEdge(int32_t edge_id, int32_t he1_id, int32_t he2_id);
-  int32_t SetCell(int32_t cell_id, int32_t heid1, int32_t heid2, int32_t heid3,
-                  int32_t heid4);
+  int32_t SetCell(int32_t cell_id, int32_t heid1, int32_t heid2, int32_t
+  heid3, int32_t heid4);
+  */
   void clear();
 
 private:

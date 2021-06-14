@@ -4,6 +4,7 @@
 #include "../core/quicklist.hpp"
 //#include <Eigen/Dense>
 #include <array>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -39,12 +40,22 @@ template <SMeshType _Ty> class SCell {
   template <SMeshType _Ty> friend class SimpleMesh;
 
 public:
-  SCell() {
+  SCell(const std::vector<SHalfEdgeId> &heids) {
+    size_t N = heids.size();
     if (_Ty == SMeshType::Tri) {
-      m_half_edges.reserve(3);
+      if (N != 3) {
+        throw std::runtime_error("three halfedges for tri cell!");
+      }
     } else if (_Ty == SMeshType::Quad) {
-      m_half_edges.reserve(4);
+      if (N != 4) {
+        throw std::runtime_error("four halfedges for quad cell!");
+      }
+    } else {
+      if (N < 3) {
+        throw std::runtime_error("at least three halfedges for tri cell!");
+      }
     }
+    m_half_edges = std::vector<SHalfEdgeId>(heids);
   }
 
 private:
@@ -83,9 +94,9 @@ class SVertex {
 private:
   // in counter-clockwise direction
   QuickList<SHalfEdgeId> m_out_he;
+  std::map<SVertexId, SHalfEdgeId> m_nbh_v;
 };
 // todo:
-// mesh声明成各种实体的友元类
 } // namespace S2D
 } // namespace SimpleMesh
 
