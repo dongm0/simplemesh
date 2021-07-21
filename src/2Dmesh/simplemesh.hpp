@@ -58,7 +58,6 @@ private:
   }
 
 public:
-public:
   size_t NumVertices() const { return m_v.size(); }
   size_t NumCells() const { return m_c.size(); }
   size_t NumHalfEdges() const { return m_he.size(); }
@@ -155,6 +154,26 @@ public:
     m_v.insert(std::make_pair(res_id, Vtype()));
     return res_id;
   }
+  EIDtype AddEdge(VIDtype vid1, VIDtypd vid2) {
+    if (_VEntity(vid1).m_nbh_v.count(vid2) != 0) {
+      auto _heid =
+          *(_VEntity(vid1).m_out_he.Find(_VEntity(vid1).m_nbh_v[vid2]));
+      return HalfEdgeInstanceEdge(_heid);
+    }
+    EIDtype res_id(m_e.size());
+    HEIDtype he1_id(m_he.size());
+    HEIDtype he2_id(m_he.size() + 1);
+    m_he[he1_id] = HEtype(vid1, vid2, he1_id, res_id);
+    m_he[he2_id] = HEtype(vid2, vid1, he2_id, res_id);
+    m_e[res_id] = Etype(he1_id, he2_id);
+
+    m_v.at(vid1).m_out_he.PushBack(he1_id);
+    m_v.at(vid2).m_out_he.PushBack(he2_id);
+    m_v.at(vid1).m_nbh_v.insert({vid2, he1_id});
+    m_v.at(vid2).m_nbh_v.insert({vid1, he2_id});
+    return res_id;
+  }
+  /*
   HEIDtype AddHalfEdge(VIDtype st_v_id, VIDtype ed_v_id) {
     if (_VEntity(st_v_id).m_nbh_v.count(ed_v_id) != 0) {
       throw std::runtime_error("halfedge already exist!");
@@ -172,6 +191,7 @@ public:
     m_v.at(ed_v_id).m_nbh_v.insert({st_v_id, res_oppo_id});
     return res_id;
   }
+  */
   // todo:
   // - 添加id有效的检测（预想可以设置为宏）
 
@@ -197,7 +217,8 @@ public:
     std::vector<HEIDtype> heids;
     for (size_t i = 0; i < vids.size(); ++i) {
       if (_VEntity(vids[i]).m_nbh_v.count(vids[(i + 1) % vids.size()]) == 0) {
-        heids.push_back(AddHalfEdge(heids[i], heids[(i + 1) % heids.size()]));
+        heids.push_back(_EEntity(AddEdge(vids[i], vids[(i + 1) % vids.size()]))
+                            .m_half_edges[0]);
       } else {
         heids.push_back(
             _VEntity(vids[i]).m_nbh_v.at(vids[(i + 1) % vids.size()]));
@@ -211,12 +232,6 @@ public:
     m_c.insert(std::make_pair(res_id, _c));
     return res_id;
   }
-  /*
-  int32_t SetHalfEdge(int32_t half_edge_id, int32_t st_v_id, int32_t ed_v_id);
-  int32_t SetEdge(int32_t edge_id, int32_t he1_id, int32_t he2_id);
-  int32_t SetCell(int32_t cell_id, int32_t heid1, int32_t heid2, int32_t
-  heid3, int32_t heid4);
-  */
   void clear();
 
 private:
